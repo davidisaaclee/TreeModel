@@ -28,7 +28,7 @@ treeInvariants = (model) ->
 
 describe 'Basic tree model', () ->
   beforeEach () ->
-    @tree = new TreeModel {foo: 3}
+    @tree = new TreeModel {foo: 3, name: 'root'}
 
   it 'can put values', () ->
     @tree.put ['a'], {name: 'a'}
@@ -230,3 +230,22 @@ describe 'Basic tree model', () ->
     expect @tree.orderedChildrenKeys
       .toEqual ['a', 'f2']
     treeInvariants @tree
+
+
+  it 'can reduce trees', () ->
+    @tree.put ['a'], {name: 'a'}
+    @tree.put ['a', 'b'], {name: 'b'}
+    @tree.put ['a', 'c'], {name: 'c'}
+    @tree.put ['a', 'd'], {name: 'd'}
+    @tree.put ['a', 'e'], {name: 'e'}
+    @tree.put ['a', 'd', 'f'], {name: 'f'}
+    @tree.put ['a', 'd', 'g'], {name: 'g'}
+    @tree.put ['a', 'd', 'f', 'h'], {name: 'h'}
+
+    reduction = (acc, elm) ->
+      acc += elm.name
+      return acc
+    result = @tree.reduce reduction, ''
+
+    expect result
+      .toBe 'bchfgdearoot'

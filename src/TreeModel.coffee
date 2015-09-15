@@ -196,6 +196,40 @@ class TreeModel
     return this
 
 
+  ###
+  Walks the tree depth-first, in order according to each node's `childList`,
+    reducing to a single value.
+
+  @param [Function<a, b, a>] procedure The reduction procedure, taking
+    as parameters the accumulator value, and the current node's value; and
+    returning the updated accumulator value.
+  @param [a] accumulator The initial accumulator value.
+  ###
+  reduce: (procedure, accumulator) ->
+    @childList.forEach (child) ->
+      accumulator = child.reduce procedure, accumulator
+    procedure accumulator, @value
+
+
+  # ###
+  # Provides mechanism to reduce the tree in a specific order.
+
+  # @param [Function<a, TreeModel, Array<TreeModel>, Function<a, TreeModel, a>, a>] procedure
+  # @param [a] accumulator
+  # ###
+  # reduceWithOrder: (procedure, accumulator) ->
+  #   procedure accumulator, this, @childList, (node) ->
+  #     procedure accumulator, node, node.childList
+
+
+  # TODO: some shit w generators? how to give full easy control here
+  #
+  # # example usage?
+  # tree.reduceWithOrder (acc, node, children, cont) ->
+  #   acc[node.id] = node
+  #   children.forEach (child) ->
+  #     acc = cont acc, child
+
   ##### Utility #####
 
   ###
