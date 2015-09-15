@@ -12,8 +12,8 @@ JASMINE=node ./node_modules/jasmine/bin/jasmine
 all:
 	$(COFFEE) $(CFLAGS) $(SOURCES)
 
-test: build-tests
+test: all
 	$(JASMINE)
 
-build-tests:
+build-tests: all
 	$(COFFEE) $(CFLAGS_TEST) $(SPEC)

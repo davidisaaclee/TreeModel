@@ -14,6 +14,14 @@ treeInvariants = (model) ->
     expect model.getIndexOfChild(key)
       .toBe idx
 
+    # This also might change.
+    # Something seems off about keeping information about the node's ancestors
+    #   in the node proper...
+    expect model.getChild(key).parent
+      .toBe model
+    expect model.getChild(key).key
+      .toBe key
+
     treeInvariants model.getChild(key)
 
 
@@ -176,3 +184,49 @@ describe 'Basic tree model', () ->
       .toEqual ['b', 'c', 'e']
     expect @tree.navigate(['a', 'b', 'g']).orderedChildrenKeys
       .toEqual ['h', 'i']
+
+
+  it 'maintains good structure under stress', () ->
+    @tree.put ['a'], {name: 'a'}
+    @tree.put ['a', 'b'], {name: 'b'}
+    @tree.put ['a', 'c'], {name: 'c'}
+    @tree.put ['a', 'd'], {name: 'd'}
+    @tree.put ['a', 'e'], {name: 'e'}
+    @tree.put ['a', 'd', 'f'], {name: 'f'}
+    @tree.put ['a', 'd', 'g'], {name: 'g'}
+    @tree.put ['a', 'd', 'f', 'h'], {name: 'h'}
+
+    treeInvariants @tree
+
+    d =
+      @tree
+        .navigate ['a']
+        .detach 'd'
+
+    expect @tree.getChild('a').orderedChildrenKeys
+      .toEqual ['b', 'c', 'e']
+    expect d.parent
+      .toBeNull()
+    expect d.key
+      .toBeNull()
+    treeInvariants @tree
+
+    e = @tree.navigate(['a', 'e'])
+    e.addChild 'd2', d
+
+    expect @tree.getChild('a').orderedChildrenKeys
+      .toEqual ['b', 'c', 'e']
+    expect e.orderedChildrenKeys
+      .toEqual ['d2']
+    treeInvariants @tree
+
+    d2 = e.detach 'd2'
+    f = d2.detach 'f'
+
+    f.addChild 'd3', d2
+    treeInvariants f
+
+    @tree.addChild 'f2', f
+    expect @tree.orderedChildrenKeys
+      .toEqual ['a', 'f2']
+    treeInvariants @tree

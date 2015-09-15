@@ -45,6 +45,17 @@ class TreeModel
       get: () ->
         @orderedChildrenKeys.map (key) => @_children[key].node
 
+  ###
+  @property [TreeModel] This node's parent node, or `null` if root.
+  ###
+  parent: null
+
+  ###
+  @property [String] The key by which this node's parent refers to this node,
+    or `null` if root.
+  ###
+  key: null
+
 
   ##### Child operations #####
 
@@ -78,6 +89,8 @@ class TreeModel
 
     @removeChild key
 
+    node.parent = this
+    node.key = key
     node.addEventListener 'changed', (@_bubble key)
 
     @orderedChildrenKeys.push key
@@ -99,26 +112,44 @@ class TreeModel
   ###
   replaceChild: (key, node) ->
     if @_children[key]?
-    then @_children[key].node = node
-    else null
+      @_children[key].node.removeEventListener 'changed', (@_bubble key)
+      @_children[key].node.parent = null
+      @_children[key].node.key = null
+      @_children[key].node = node
+    else
+      return null
 
 
   ###
-  @param [String] key
+  @param [String] key Key of child to be removed.
+  @return [TreeModel] The removed child.
   ###
-  removeChild: (key) -> @_mutate () =>
+  removeChild: (key) ->
     if @_children[key]?
       toDelete = @_children[key]
-      toDelete.node.removeEventListener 'changed', (@_bubble key)
-      @orderedChildrenKeys.splice @_children[key].index, 1
-      delete @_children[key]
 
-      reorderChildren = (startIndex) =>
-        for i in [startIndex...@orderedChildrenKeys.length]
-          @_children[@orderedChildrenKeys[i]].index = i
-      reorderChildren toDelete.index
+      @_mutate () => toDelete.node._mutate () =>
+        toDelete.node.removeEventListener 'changed', (@_bubble key)
+        toDelete.node.parent = null
+        toDelete.node.key = null
 
-      return toDelete.node
+        @orderedChildrenKeys.splice @_children[key].index, 1
+        delete @_children[key]
+
+        reorderChildren = (startIndex) =>
+          for i in [startIndex...@orderedChildrenKeys.length]
+            @_children[@orderedChildrenKeys[i]].index = i
+        reorderChildren toDelete.index
+
+        return toDelete.node
+
+  ###
+  Alias for `removeChild`.
+
+  @param [String] key Key of child to be detached.
+  @return [TreeModel] The detached child.
+  ###
+  detach: () -> @removeChild arguments...
 
 
   ##### Tree operations #####
@@ -184,11 +215,9 @@ class TreeModel
     # check if we're being called _inside of_ a mutating method
     if not @_isMutating
       @_isMutating = true
-      # console.log 'opened mutating'
       r = do procedure
       @_fireChanged()
       @_isMutating = false
-      # console.log 'closed mutating'
       return r
     else
       do procedure
@@ -202,7 +231,7 @@ class TreeModel
   @param [TreeModel] node The changed node.
   ###
   _fireChanged: () ->
-    # console.log 'fired'
+    
     @dispatchEvent 'changed',
       node: this
       path: []
