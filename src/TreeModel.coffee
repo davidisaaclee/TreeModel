@@ -103,21 +103,18 @@ class TreeModel
 
 
   ###
-  Replaces the child node at `key` with the specified node.
-  If no such child exists, does nothing and returns `null`.
+  If a child exists at the specified key, replaces the child node at `key` with
+    the specified node.
+    If no such child exists, adds the node as a child at the specified key.
 
   @param [String] key The child's key.
   @param [TreeModel] node The node to put in the existing child's place.
-  @return [TreeModel] The new child node (`node`), or `null` if no such child.
+  @return [TreeModel] The "adopted" child node (`node`)
   ###
-  replaceChild: (key, node) ->
+  setChild: (key, node) ->
     if @_children[key]?
-      @_children[key].node.removeEventListener 'changed', (@_bubble key)
-      @_children[key].node.parent = null
-      @_children[key].node.key = null
-      @_children[key].node = node
-    else
-      return null
+    then @_mutate () => @_children[key].node = node
+    else @addChild key, node
 
 
   ###
