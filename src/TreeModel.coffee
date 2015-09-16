@@ -23,46 +23,29 @@ class TreeModel
   @param [a] value This node's held value.
   ###
   constructor: (@value) ->
+    # mixin EventTarget functionality
+    EventTargetMixin this
 
     ###
-    We need to define `_mutate` before we can use it here.
-    (If we keep it in CoffeeScript's method declaration style, it will translate
-      to `TreeModel.prototype._mutate = ...` later in the file, and won't see it
-      until it's too late!)
+    @property [Array] Mapping of keys to this node's children, in the form:
+      node: TreeModel
+      key: String
     ###
-    @_mutate = (procedure) ->
-      # check if we're being called _inside of_ a mutating method
-      if not @_isMutating
-        @_isMutating = true
-        r = do procedure
-        @_fireChanged()
-        @_isMutating = false
-        return r
-      else
-        do procedure
+    @_children = {}
 
-    @_mutate () =>
-      # mixin EventTarget functionality
-      EventTargetMixin this
+    ###
+    @property [Array<String>] An ordered list of keys for this node's children.
+    ###
+    @orderedChildrenKeys = []
 
-      ###
-      @property [Array] Mapping of keys to this node's children, in the form:
-        node: TreeModel
-        key: String
-      ###
-      @_children = {}
+    ###
+    @property [Array<TreeModel>] An ordered list of this node's children.
+    ###
+    Object.defineProperty this, 'childList',
+      get: () ->
+        @orderedChildrenKeys.map (key) => @_children[key].node
 
-      ###
-      @property [Array<String>] An ordered list of keys for this node's children.
-      ###
-      @orderedChildrenKeys = []
-
-      ###
-      @property [Array<TreeModel>] An ordered list of this node's children.
-      ###
-      Object.defineProperty this, 'childList',
-        get: () ->
-          @orderedChildrenKeys.map (key) => @_children[key].node
+    do @_fireChanged
 
   ###
   @property [TreeModel] This node's parent node, or `null` if root.
@@ -265,16 +248,16 @@ class TreeModel
   @param [Function] procedure The action to perform.
   @return [?] The result of procedure.
   ###
-  # _mutate: (procedure) ->
-  #   # check if we're being called _inside of_ a mutating method
-  #   if not @_isMutating
-  #     @_isMutating = true
-  #     r = do procedure
-  #     @_fireChanged()
-  #     @_isMutating = false
-  #     return r
-  #   else
-  #     do procedure
+  _mutate: (procedure) ->
+    # check if we're being called _inside of_ a mutating method
+    if not @_isMutating
+      @_isMutating = true
+      r = do procedure
+      @_fireChanged()
+      @_isMutating = false
+      return r
+    else
+      do procedure
 
 
   ##### Communication #####
