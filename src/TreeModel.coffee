@@ -22,28 +22,47 @@ class TreeModel
 
   @param [a] value This node's held value.
   ###
-  constructor: (@value) -> @_mutate () =>
-    # mixin EventTarget functionality
-    EventTargetMixin this
+  constructor: (@value) ->
 
     ###
-    @property [Array] Mapping of keys to this node's children, in the form:
-      node: TreeModel
-      key: String
+    We need to define `_mutate` before we can use it here.
+    (If we keep it in CoffeeScript's method declaration style, it will translate
+      to `TreeModel.prototype._mutate = ...` later in the file, and won't see it
+      until it's too late!)
     ###
-    @_children = {}
+    @_mutate = (procedure) ->
+      # check if we're being called _inside of_ a mutating method
+      if not @_isMutating
+        @_isMutating = true
+        r = do procedure
+        @_fireChanged()
+        @_isMutating = false
+        return r
+      else
+        do procedure
 
-    ###
-    @property [Array<String>] An ordered list of keys for this node's children.
-    ###
-    @orderedChildrenKeys = []
+    @_mutate () =>
+      # mixin EventTarget functionality
+      EventTargetMixin this
 
-    ###
-    @property [Array<TreeModel>] An ordered list of this node's children.
-    ###
-    Object.defineProperty this, 'childList',
-      get: () ->
-        @orderedChildrenKeys.map (key) => @_children[key].node
+      ###
+      @property [Array] Mapping of keys to this node's children, in the form:
+        node: TreeModel
+        key: String
+      ###
+      @_children = {}
+
+      ###
+      @property [Array<String>] An ordered list of keys for this node's children.
+      ###
+      @orderedChildrenKeys = []
+
+      ###
+      @property [Array<TreeModel>] An ordered list of this node's children.
+      ###
+      Object.defineProperty this, 'childList',
+        get: () ->
+          @orderedChildrenKeys.map (key) => @_children[key].node
 
   ###
   @property [TreeModel] This node's parent node, or `null` if root.
@@ -233,6 +252,10 @@ class TreeModel
   ##### Utility #####
 
   ###
+  Perform a lot of mutations to this node or its descendants, only triggering
+    a single change event.
+
+  @param [Function<TreeModel, ?>] proc
   ###
   batchMutate: (proc) -> @_mutate () => proc this
 
@@ -242,16 +265,16 @@ class TreeModel
   @param [Function] procedure The action to perform.
   @return [?] The result of procedure.
   ###
-  _mutate: (procedure) ->
-    # check if we're being called _inside of_ a mutating method
-    if not @_isMutating
-      @_isMutating = true
-      r = do procedure
-      @_fireChanged()
-      @_isMutating = false
-      return r
-    else
-      do procedure
+  # _mutate: (procedure) ->
+  #   # check if we're being called _inside of_ a mutating method
+  #   if not @_isMutating
+  #     @_isMutating = true
+  #     r = do procedure
+  #     @_fireChanged()
+  #     @_isMutating = false
+  #     return r
+  #   else
+  #     do procedure
 
 
   ##### Communication #####
@@ -262,7 +285,6 @@ class TreeModel
   @param [TreeModel] node The changed node.
   ###
   _fireChanged: () ->
-    
     @dispatchEvent 'changed',
       node: this
       path: []
