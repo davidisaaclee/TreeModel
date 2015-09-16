@@ -249,3 +249,25 @@ describe 'Basic tree model', () ->
 
     expect result
       .toBe 'bchfgdearoot'
+
+
+  it 'can calculate paths', () ->
+    @tree.put ['a'], {name: 'a'}
+    @tree.put ['a', 'b'], {name: 'b'}
+    @tree.put ['a', 'c'], {name: 'c'}
+    d = @tree.put ['a', 'd'], {name: 'd'}
+    @tree.put ['a', 'e'], {name: 'e'}
+    @tree.put ['a', 'd', 'f'], {name: 'f'}
+    @tree.put ['a', 'd', 'g'], {name: 'g'}
+    h = @tree.put ['a', 'd', 'f', 'h'], {name: 'h'}
+
+    expect (@tree.navigate h.getPathToRoot())
+      .toBe h
+    expect (@tree.navigate d.getPathToRoot())
+      .toBe d
+
+    expect (d.navigate h.getPathRelativeTo(d))
+      .toBe h
+    backwards = () -> d.getPathRelativeTo h
+    expect backwards
+      .toThrow()

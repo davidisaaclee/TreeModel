@@ -216,12 +216,23 @@ class TreeModel
   # ###
   # Provides mechanism to reduce the tree in a specific order.
 
-  # @param [Function<a, TreeModel, Array<TreeModel>, Function<a, TreeModel, a>, a>] procedure
+  # @example
+
+  # reduction = (acc, val, node, children) ->
+  #   acc_ =
+  #     children.reduce \
+  #       (acc__, child) -> child.reduceWithOrder reduction, acc__,
+  #       acc
+  #   acc_ = val + acc_ # or something
+  #   return acc_
+
+  # tree.reduceWithOrder reduction, 0
+
+  # @param [Function<a, TreeModel, Array<TreeModel>, a>] procedure
   # @param [a] accumulator
   # ###
   # reduceWithOrder: (procedure, accumulator) ->
-  #   procedure accumulator, this, @childList, (node) ->
-  #     procedure accumulator, node, node.childList
+  #   procedure accumulator, @value, this, @childList
 
 
   # TODO: some shit w generators? how to give full easy control here
@@ -231,6 +242,30 @@ class TreeModel
   #   acc[node.id] = node
   #   children.forEach (child) ->
   #     acc = cont acc, child
+
+
+  ###
+  Calculates the path relative to the first ancestor with a `null` parent.
+  ###
+  getPathToRoot: () -> @getPathRelativeTo null
+
+  ###
+  Calculates the path relative to the specified ancestor node. That is,
+      node1 is (node2.navigate (node1.getPathRelativeTo node2))
+
+  @param [TreeModel] node An ancestor node which will be the root of the
+    resulting path.
+  @return A path `p` such that `node.navigate p` is this node.
+  ###
+  getPathRelativeTo: (node) ->
+    if @parent is node
+      if @key?
+      then [@key]
+      else []
+    else
+      if @parent?
+      then [(@parent.getPathRelativeTo node)..., @key]
+      else throw new Error 'No path connecting these two nodes', this, node
 
   ##### Utility #####
 
