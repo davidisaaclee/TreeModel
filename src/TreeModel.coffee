@@ -45,7 +45,7 @@ class TreeModel
       get: () ->
         @orderedChildrenKeys.map (key) => @_children[key].node
 
-    do @_fireChanged
+    # do @_fireChanged
 
   ###
   @property [TreeModel] This node's parent node, or `null` if root.
