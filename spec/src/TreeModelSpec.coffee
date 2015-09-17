@@ -231,6 +231,39 @@ describe 'Basic tree model', () ->
       .toEqual ['a', 'f2']
     treeInvariants @tree
 
+    # `setChild`
+
+    oldA = @tree.navigate ['a']
+    @tree.setChild 'a', (new TreeModel name: 'newA')
+
+    expect @tree.navigate(['a']).parent
+      .toBe @tree
+    expect @tree.navigate(['a']).key
+      .toBe 'a'
+
+    # ... negates parent/key of old child
+    expect oldA.parent
+      .toBe null
+    expect oldA.key
+      .toBe null
+
+    rootChangedSpy = jasmine.createSpy 'rootChangedSpy'
+    aChangedSpy = jasmine.createSpy 'aChangedSpy'
+    @tree.addEventListener 'changed', rootChangedSpy
+    oldA.addEventListener 'changed', aChangedSpy
+
+    expect rootChangedSpy.calls.count()
+      .toBe 0
+    expect aChangedSpy.calls.count()
+      .toBe 0
+
+    # ... as well as changed event bubbling
+    oldA.removeChild 'b'
+    expect aChangedSpy.calls.count()
+      .toBe 1
+    expect rootChangedSpy.calls.count()
+      .toBe 0
+
 
   it 'can reduce trees', () ->
     @tree.put ['a'], {name: 'a'}

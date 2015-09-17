@@ -93,7 +93,7 @@ class TreeModel
 
     node.parent = this
     node.key = key
-    node.addEventListener 'changed', (@_bubble key)
+    # node.addEventListener 'changed', (@_bubble key)
 
     @orderedChildrenKeys.push key
     index = @orderedChildrenKeys.length - 1
@@ -115,7 +115,17 @@ class TreeModel
   ###
   setChild: (key, node) ->
     if @_children[key]?
-    then @_mutate () => @_children[key].node = node
+    then @_mutate () =>
+      node.parent = this
+      node.key = key
+      # node.addEventListener 'changed', (@_bubble key)
+
+      oldNode = @_children[key].node
+      oldNode.parent = null
+      oldNode.key = null
+      oldNode.removeEventListener 'changed', (@_bubble key)
+
+      @_children[key].node = node
     else @addChild key, node
 
 
@@ -288,7 +298,7 @@ class TreeModel
     if not @_isMutating
       @_isMutating = true
       r = do procedure
-      @_fireChanged()
+      @_fireChanged this
       @_isMutating = false
       return r
     else
@@ -302,10 +312,12 @@ class TreeModel
 
   @param [TreeModel] node The changed node.
   ###
-  _fireChanged: () ->
+  _fireChanged: (node) ->
     @dispatchEvent 'changed',
-      node: this
+      node: node
       path: []
+    if @parent?
+      @parent._fireChanged node
 
   _bubble: (childKey) => (evt) =>
     # If this node receives a change event from a child while mutating,
